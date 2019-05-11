@@ -2,7 +2,7 @@
 math.randomseed(seed)
 
 -- set player 0 or 1
-player_id = 0
+player_id = 1
 
 -- set piece counter
 function set_piece_counter()
@@ -59,7 +59,24 @@ rng_vec = {
 28898,
 49669,
 57602,
-61569
+61569,
+1849,
+33692,
+49614,
+57575,
+61555,
+43203,
+50755,
+25377,
+17395,
+8697,
+4348,
+2174,
+33855,
+49695,
+26630,
+21251,
+10625
 }
 rng_vec_len = 0
 for _ in pairs(rng_vec) do rng_vec_len = rng_vec_len + 1 end
@@ -77,10 +94,6 @@ sp_rng_val = 0
 function update_rng()
    rng_val = hash(rng_val)
 end
--- apply seed 
-for i=0,seed do
-  update_rng()
-end
 
 function get_rng_from_vec()
   pos = math.random(1, rng_vec_len - 1) 
@@ -89,15 +102,16 @@ end
 
 -- gets called every other game
 function init_game()
-  if rng_val <= sp_rng_val then rng_val = sp_rng_val end
+  --if rng_val <= sp_rng_val then rng_val = sp_rng_val end
   set_piece_counter()
-  if emu.read(0x33, emu.memType.cpu) == 1 then
-    get_rng_from_vec()
-    emu.reset()
-  end
+  get_rng_from_vec()
+  --if emu.read(0x33, emu.memType.cpu) == 1 then
+  --  get_rng_from_vec()
+  --  emu.reset()
+  --end
 end
 init_game()
-get_rng_from_vec()
+--get_rng_from_vec()
 
 -- callbacks for writing rng value to mem
 emu.addMemoryCallback(
@@ -125,11 +139,11 @@ function file_exists(path)
 end
 
 rng_marker = "./marker" 
-function update_rng_marker(con)
+function update_marker(con)
   if con then
     local f = io.open(rng_marker .. tostring(player_id), "wb")
     if emu.read(0x4c7, emu.memType.cpu) == 0x4f then 
-      f:write(tostring(rng_val))
+      f:write("1")
     else 
       f:write("0")
     end
@@ -139,14 +153,18 @@ function update_rng_marker(con)
   end
 end
 
-function get_rng_marker()
+function get_marker()
   local fp = ""
   if player_id == 0 then fp = rng_marker .. "1" else fp = rng_marker .. "0" end
   local f = io.open(fp, "r")
-  if f == nil then return false, 0 end
-  trng = tonumber(f:read())
+  if f == nil then return false, false end
+  eg = tonumber(f:read())
   io.close(f)
-  return true, trng
+  if eg == 0 then
+    return true, false
+  else 
+    return true, true
+  end
 end
 -------------------------------------------
 
@@ -156,16 +174,14 @@ emu.addEventCallback(function()
   
   emu.log("rng_val: " .. rng_val)
   
-  update_rng_marker(input.start)
+  update_marker(input.start)
   
   if input.start then
-    is, trng = get_rng_marker()
+    is, eg = get_marker()
     --emu.log("is: " .. tostring(is) .. " rng: " .. sp_rng_val)
     input.start = is
-    if trng == 0 and emu.read(0x4c7, emu.memType.cpu) == 0x4f then
+    if (not eg) and emu.read(0x4c7, emu.memType.cpu) == 0x4f then
       input.start = false
-    else
-      sp_rng_val = trng
     end
   end
   emu.setInput(0, input)

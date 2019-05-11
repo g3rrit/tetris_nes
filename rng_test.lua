@@ -18,7 +18,7 @@ function update_rng()
 end
  
  
-for i=0, 2340065 do 
+for i=0, 136485 do 
   update_rng()
 end
  
@@ -41,7 +41,6 @@ emu.addEventCallback(function()
 
   --emu.log("time: " .. tostring(os.time()))
   if (os.time() - last_time) >= 1 then
-    emu.log("ere")
     last_time = os.time()
     if input.select then
       emu.log("rng: " .. tostring(rng_val))
