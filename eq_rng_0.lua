@@ -1,4 +1,5 @@
-﻿seed = 435
+﻿seed = 0
+math.randomseed(seed)
 
 -- set player 0 or 1
 player_id = 0
@@ -8,6 +9,61 @@ function set_piece_counter()
   emu.write(0x001A, 2, emu.memType.cpu)
 end
 
+rng_vec = {
+35209,
+17604,
+8802,
+4401,
+2200,
+1100,
+550,
+275,
+32905,
+16452,
+8226,
+36881,
+18440,
+9220,
+4610,
+2305,
+1152,
+576,
+33056,
+16528,
+8264,
+4132,
+2066,
+33801,
+16900,
+41218,
+53377,
+26688,
+18052,
+41794,
+20897,
+10448,
+32831,
+49183,
+57359,
+61447,
+32889,
+16444,
+8222,
+36879,
+51207,
+58371,
+61953,
+34576,
+50056,
+57796,
+28898,
+49669,
+57602,
+61569
+}
+rng_vec_len = 0
+for _ in pairs(rng_vec) do rng_vec_len = rng_vec_len + 1 end
+
 -- original rng hashing function
 function hash(val)
   return ((((val >> 9) & 1) ~ ((val >> 1) & 1)) << 15) | (val >> 1)
@@ -15,7 +71,7 @@ end
 
 -- 0x8989
 -- set starting values for rng vars
-rng_start_val = 10954
+rng_start_val = 0x8989
 rng_val = rng_start_val
 sp_rng_val = 0
 function update_rng()
@@ -26,16 +82,22 @@ for i=0,seed do
   update_rng()
 end
 
+function get_rng_from_vec()
+  pos = math.random(1, rng_vec_len - 1) 
+  rng_val = rng_vec[pos] 
+end
+
 -- gets called every other game
 function init_game()
   if rng_val <= sp_rng_val then rng_val = sp_rng_val end
-  update_rng()
   set_piece_counter()
   if emu.read(0x33, emu.memType.cpu) == 1 then
+    get_rng_from_vec()
     emu.reset()
   end
 end
 init_game()
+get_rng_from_vec()
 
 -- callbacks for writing rng value to mem
 emu.addMemoryCallback(
@@ -99,9 +161,9 @@ emu.addEventCallback(function()
   if input.start then
     is, trng = get_rng_marker()
     --emu.log("is: " .. tostring(is) .. " rng: " .. sp_rng_val)
-    input.start = is
+    --input.start = is
     if trng == 0 and emu.read(0x4c7, emu.memType.cpu) == 0x4f then
-      input.start = false
+      --input.start = false
     else
       sp_rng_val = trng
     end
